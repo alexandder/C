@@ -123,9 +123,14 @@ void rmv(char givenWord[])
 				y->parent->right = x;
 			if (y != z)
 			{
-				z->word = y->word;
+			    if ( strlen(z->word) < strlen(y->word) )
+                    z->word = realloc(z->word, sizeof(char) * (strlen(y->word) - strlen(z->word)) );
+                strncpy(z->word, y->word, sizeof(z->word) - 1);
+                z->word[strlen(z->word)] = '\0';
 				z->arity = y->arity;
 			}
+			free(y->word);
+			free(y);
 		}
 	}
 }
@@ -146,7 +151,6 @@ void drawTree()
 
     if ( root != NULL)
     {
-        int i=0;
         int col;
         int row;
         getmaxyx(stdscr, row, col);
