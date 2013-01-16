@@ -1,8 +1,8 @@
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
-#include <curses.h>
+#include <ncurses.h>
 #define SIZE 30
 
 
@@ -26,7 +26,7 @@ struct node* treeSearch(int k) {
         else
             x = x->right;
     }
-    return x
+    return x;
 }
 
 void LeftRotate(int k) {
@@ -120,7 +120,13 @@ void RBInsert(int k){
             x = x->right;
         }
     }
+    printf("test\n");
     struct node* newNode = (struct node*)malloc(sizeof(struct node));
+    if (newNode == NULL) {
+      printf("za malo pamieci\n");
+      return;
+    }
+    else {
     newNode->parent = y;
     newNode->value = k;
     newNode->left = NULL;
@@ -139,6 +145,7 @@ void RBInsert(int k){
     newNode->color=RED;
     RBInsertFixup(k);
     printf("Element dodany\n");
+    }
 }
 
 
@@ -146,10 +153,63 @@ void display(struct node* x){
     if (x != NULL)
     {
         display(x->left);
-        printf("%d\n",  x->value);
+        printf("%d\n", x->value);
         display(x->right);
     }
 }
+
+
+
+int my_itoa(int val, char* buf)
+{
+    const unsigned int radix = 10;
+
+    char* p;
+    unsigned int a;        //every digit
+    int len;
+    char* b;            //start of the digit char
+    char temp;
+    unsigned int u;
+
+    p = buf;
+
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = 0 - val;
+    }
+    u = (unsigned int)val;
+
+    b = p;
+
+    do
+    {
+        a = u % radix;
+        u /= radix;
+
+        *p++ = a + '0';
+
+    } while (u > 0);
+
+    len = (int)(p - buf);
+
+    *p-- = 0;
+
+    //swap
+    do
+    {
+        temp = *p;
+        *p = *b;
+        *b = temp;
+        --p;
+        ++b;
+
+    } while (b < p);
+
+    return len;
+}
+
+
 
 void drawTree()
 {
@@ -161,16 +221,15 @@ void drawTree()
         int col;
         int row;
         getmaxyx(stdscr, row, col);
-        char* arity=(char*)malloc(sizeof(char));
-        mvprintw(0, col/2 - strlen(root->word), root->word);
-        itoa(root->arity, arity, 10);
-        mvprintw(1, col/2 - strlen(root->word)/2 , arity);
+    char* valueWord = (char *)malloc(5);
+	int lenWord = my_itoa(root->value, valueWord);
+        mvprintw(0, col/2 - lenWord, valueWord);
 
         if ( root->left != NULL)
         {
-            row = 2;                                 // pierwszy poziom
+            row = 2; // pierwszy poziom
             struct node* l = root->left;
-            int loc = col/2 - strlen(root->word) - 5;
+            int loc = col/2 - 6;
             drawLeftEdge(row, loc);
             row += 3;
             loc = loc - 5;
@@ -178,9 +237,9 @@ void drawTree()
 
             if (l->left != NULL)
             {
-                row = 6;                               // drugi poziom
+                row = 6; // drugi poziom
                 struct node* ll = l->left;
-                int loc2 = loc - strlen(ll->word) - 1;
+                int loc2 = loc - 1;
                 drawLeftEdge(row, loc2);
                 loc2 = loc2 - 4;
                 row += 3;
@@ -188,9 +247,9 @@ void drawTree()
 
                 if (ll->left != NULL)
                 {
-                        row = 10;                                // poziom trzeci
-                        struct node* lll  = ll->left;
-                        int loc3 = loc2 - strlen(ll->word) - 1;
+                        row = 10; // poziom trzeci
+                        struct node* lll = ll->left;
+                        int loc3 = loc2 - 1;
                         drawLeftEdge(row, loc3);
                         loc3 = loc3 - 3;
                         row += 3;
@@ -198,20 +257,20 @@ void drawTree()
 
                         if (lll->left != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 - 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
                             loc4 -= 3;
                             row += 2;
-                            struct node* llll  = lll->left;
+                            struct node* llll = lll->left;
                             drawLeftWord(row, loc4, llll);
 
                         }
 
                         if (lll->right != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -219,16 +278,16 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* lllr  = lll->right;
+                            struct node* lllr = lll->right;
                             drawRightWord(row, loc4, lllr);
                         }
                 }
 
                 if (ll->right != NULL)
                 {
-                        row = 10;                                 // poziom trzeci
-                        struct node* llr  = ll->right;
-                        int loc3 = loc2 + strlen(ll->word)/2;
+                        row = 10; // poziom trzeci
+                        struct node* llr = ll->right;
+                        int loc3 = loc2 + 1;
                         drawRightEdge(row, loc3);
                         loc3 += 1;
                         row += 3;
@@ -236,19 +295,19 @@ void drawTree()
 
                         if ( llr->left != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
                             loc4 -= 1;
                             row += 2;
-                            struct node* llrl  = llr->left;
+                            struct node* llrl = llr->left;
                             drawLeftWord(row, loc4, llrl);
                         }
 
                         if ( llr->right != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 1;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -256,7 +315,7 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* llrr  = llr->right;
+                            struct node* llrr = llr->right;
                             drawRightWord(row, loc4, llrr);
                         }
                 }
@@ -264,17 +323,17 @@ void drawTree()
 
             if (l->right != NULL)
             {
-                row = 6;                                // drugi poziom
-                struct node* lr  = l->right;
+                row = 6; // drugi poziom
+                struct node* lr = l->right;
                 int loc2 = loc + 2;
                 drawRightEdge(row, loc2);
                 row += 3;
-                loc2 += strlen(lr->word);
+                loc2 += 2;
                 drawRightWord(row, loc2, lr);
 
                 if (lr->left != NULL)
                 {
-                        struct node* lrl  = lr->left;         // poziom trzeci
+                        struct node* lrl = lr->left; // poziom trzeci
                         int loc3 = loc2;
                         row = 11;
                         mvprintw(row, loc3, "/");
@@ -285,7 +344,7 @@ void drawTree()
 
                         if (lrl->left != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 - 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
@@ -297,7 +356,7 @@ void drawTree()
 
                         if (lrl->right != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -305,7 +364,7 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* lrlr  = lrl->right;
+                            struct node* lrlr = lrl->right;
                             drawRightWord(row, loc4, lrlr);
                         }
                 }
@@ -313,8 +372,8 @@ void drawTree()
                 if (lr->right != NULL)
                 {
                         row = 11;
-                        int loc3 = loc2 + 4;                               // trzeci poziom
-                        struct node* lrr  = lr->right;
+                        int loc3 = loc2 + 4; // trzeci poziom
+                        struct node* lrr = lr->right;
                         mvprintw(row, loc3, "\\");
                         mvprintw(row + 1, loc3 + 1, "\\");
                         row += 2;
@@ -323,7 +382,7 @@ void drawTree()
 
                         if (lrr->left != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
@@ -335,7 +394,7 @@ void drawTree()
 
                         if (lrr->right != NULL)
                         {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -343,7 +402,7 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* lrrr  = lrr->right;
+                            struct node* lrrr = lrr->right;
                             drawRightWord(row, loc4, lrrr);
                         }
                 }
@@ -352,7 +411,7 @@ void drawTree()
 
         if (root->right != NULL)
         {
-            struct node* r = root->right;              // pierwszy poziom
+            struct node* r = root->right; // pierwszy poziom
             int loc = col/2 + 6;
             row = 2;
             drawRightEdge(row, loc);
@@ -362,7 +421,7 @@ void drawTree()
 
             if (r->left != NULL)
             {
-                row = 6;                             // drugi poziom
+                row = 6; // drugi poziom
                 struct node* rl = r->left;
                 int loc2 = loc;
                 drawLeftEdge(row, loc2);
@@ -372,7 +431,7 @@ void drawTree()
 
                 if (rl->left != NULL)
                 {
-                    struct node* rll  = rl->left;         // poziom trzeci
+                    struct node* rll = rl->left; // poziom trzeci
                     int loc3 = loc2 - 1;
                     row = 11;
                     mvprintw(row, loc3, "/");
@@ -383,7 +442,7 @@ void drawTree()
 
                     if (rll->left != NULL)
                     {
-                        row = 15;                              // poziom czwarty
+                        row = 15; // poziom czwarty
                         int loc4 = loc3 - 1;
                         mvprintw(row, loc4, "/");
                         mvprintw(row + 1, loc4 - 1, "/");
@@ -395,7 +454,7 @@ void drawTree()
 
                     if (rll->right != NULL)
                     {
-                        row = 15;                              // poziom czwarty
+                        row = 15; // poziom czwarty
                         int loc4 = loc3;
                         mvprintw(row, loc4, "\\");
                         mvprintw(row + 1, loc4 + 1, "\\");
@@ -403,7 +462,7 @@ void drawTree()
                         mvprintw(row + 3, loc4 + 3, "\\");
                         loc4 += 3;
                         row += 4;
-                        struct node* rllr  = rll->right;
+                        struct node* rllr = rll->right;
                         drawRightWord(row, loc4, rllr);
                     }
                 }
@@ -411,8 +470,8 @@ void drawTree()
                 if (rl->right != NULL)
                 {
                     row = 11;
-                    int loc3 = loc2 + 1;                               // trzeci poziom
-                    struct node* rlr  = rl->right;
+                    int loc3 = loc2 + 1; // trzeci poziom
+                    struct node* rlr = rl->right;
                     mvprintw(row, loc3, "\\");
                     mvprintw(row + 1, loc3 + 1, "\\");
                     row += 2;
@@ -421,7 +480,7 @@ void drawTree()
 
                     if (rlr->left != NULL)
                     {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
@@ -434,7 +493,7 @@ void drawTree()
 
                     if (rlr->right != NULL)
                     {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -442,7 +501,7 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* rlrr  = rlr->right;
+                            struct node* rlrr = rlr->right;
                             drawRightWord(row, loc4, rlrr);
 
                     }
@@ -451,9 +510,9 @@ void drawTree()
 
             if (r->right != NULL)
             {
-                row = 6;                             // drugi poziom
-                struct node* rr  = r->right;
-                int loc2 = loc + strlen(r->word) + 3;
+                row = 6; // drugi poziom
+                struct node* rr = r->right;
+                int loc2 = loc + 3;
                 drawRightEdge(row, loc2);
                 row += 3;
                 loc2 += 3;
@@ -461,7 +520,7 @@ void drawTree()
 
                 if (rr->left != NULL)
                 {
-                    struct node* rrl  = rr->left;         // poziom trzeci
+                    struct node* rrl = rr->left; // poziom trzeci
                     int loc3 = loc2 + 3;
                     row = 11;
                     mvprintw(row, loc3, "/");
@@ -472,7 +531,7 @@ void drawTree()
 
                     if (rrl->left != NULL)
                     {
-                        row = 15;                              // poziom czwarty
+                        row = 15; // poziom czwarty
                         int loc4 = loc3 - 1;
                         mvprintw(row, loc4, "/");
                         mvprintw(row + 1, loc4 - 1, "/");
@@ -484,7 +543,7 @@ void drawTree()
 
                     if (rrl->right != NULL)
                     {
-                        row = 15;                              // poziom czwarty
+                        row = 15; // poziom czwarty
                         int loc4 = loc3;
                         mvprintw(row, loc4, "\\");
                         mvprintw(row + 1, loc4 + 1, "\\");
@@ -492,7 +551,7 @@ void drawTree()
                         mvprintw(row + 3, loc4 + 3, "\\");
                         loc4 += 3;
                         row += 4;
-                        struct node* rrlr  = rrl->right;
+                        struct node* rrlr = rrl->right;
                         drawRightWord(row, loc4, rrlr);
                     }
                 }
@@ -500,8 +559,8 @@ void drawTree()
                 if (rr->right != NULL)
                 {
                     row = 11;
-                    int loc3 = loc2 + 5;                               // trzeci poziom
-                    struct node* rrr  = rr->right;
+                    int loc3 = loc2 + 5; // trzeci poziom
+                    struct node* rrr = rr->right;
                     mvprintw(row, loc3, "\\");
                     mvprintw(row + 1, loc3 + 1, "\\");
                     row += 2;
@@ -510,7 +569,7 @@ void drawTree()
 
                     if (rrr->left != NULL)
                     {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
@@ -523,7 +582,7 @@ void drawTree()
 
                     if (rrr->right != NULL)
                     {
-                            row = 15;                              // poziom czwarty
+                            row = 15; // poziom czwarty
                             int loc4 = loc3 + 3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -531,7 +590,7 @@ void drawTree()
                             mvprintw(row + 3, loc4 + 3, "\\");
                             loc4 += 3;
                             row += 4;
-                            struct node* rrrr  = rrr->right;
+                            struct node* rrrr = rrr->right;
                             drawRightWord(row, loc4, rrrr);
 
                     }
@@ -546,18 +605,16 @@ void drawTree()
 
 void drawLeftWord(int locr, int locc, struct node* left)
 {
-    char* arity=(char*)malloc(sizeof(char));
-    mvprintw(locr, locc - strlen(left->word)/2, left->word);
-    itoa(left->arity, arity, 10);
-    mvprintw(locr + 1, locc, arity);
+    char* valueWord = (char *)malloc(5);
+    int lenWord = my_itoa(left->value, valueWord);
+    mvprintw(locr, locc - lenWord, valueWord);
 }
 
 void drawRightWord(int locr, int locc, struct node* right)
 {
-    char* arity=(char*)malloc(sizeof(char));
-    mvprintw(locr, locc, right->word);
-    itoa(right->arity, arity, 10);
-    mvprintw(locr + 1, locc + strlen(right->word) - 2 , arity);
+    char* valueWord = (char *)malloc(5);
+    int lenWord = my_itoa(right->value, valueWord);
+    mvprintw(locr, locc, valueWord);
 }
 
 void drawLeftEdge(int x, int y)
@@ -575,61 +632,44 @@ void drawRightEdge(int x, int y)
 }
 
 int main() {
-
+  
+  RBInsert(5);
+  RBInsert(3);
+  RBInsert(10);
      do {
         printf("\n");
         printf("MENU\n");
-    printf("0 - zakonczenie\n");
-    printf("1 - dopisanie\n");
-    printf("2 - usuniecie\n");
-    printf("3 - wyswietlenie\n");
-    printf("4 - rysowanie\n");
-    printf("Wybierz opcje: ");
-    char choice[1];
-    scanf("%s", choice);
-    printf("\n");
-    if (strcmp(choice, "0") == 0){
-        printf("Do widzenia!\n");
-        break;
-    }
-    else if (strcmp(choice, "1") == 0){
-        char *newWord;
-        newWord = (char *)calloc(SIZE+1, sizeof(char));
-    if (newWord==NULL){
-        printf("Nie ma miejsca na nowe slowo\n");
-    }
-    else {
-        printf("Podaj slowo: ");
-        scanf("%s", newWord);
-        newWord[SIZE]='\0';
-        add(newWord);
-        }
-    }
-    else if (strcmp(choice, "2") == 0){
-        if (root == NULL){
-            printf("Lista jest pusta\n");
-        }
-        else {
-            char newWord[SIZE];
-            printf("Podaj slowo, ktore chcesz usunac: ");
-            scanf("%s", newWord);
-            rmv(newWord);
-        }
-    }
-    else if (strcmp(choice, "3") == 0)
-    {
-        display(root);
-    }
-    else if (strcmp(choice, "4") == 0)
-    {
-        drawTree();
-    }
-    else {
-        printf("Nie ma takiego wyboru\n");
-    }
-    } while (1);
+	printf("0 - zakonczenie\n");
+	printf("1 - dopisanie\n");
+	printf("2 - wyswietlenie\n");
+	printf("3 - rysowanie\n");
+	printf("Wybierz opcje: ");
+	char choice[1];
+	scanf("%s", choice);
+	printf("\n");
 
+	if (strcmp(choice, "0") == 0) {
+	  printf("Do widzenia!\n");
+	  break;
+	}
 
-    getchar();
+	else if (strcmp(choice, "1") == 0) {
+	  int newElement;
+	  printf("Podaj wartosc: ");
+	  scanf("%d", &newElement);
+	  RBInsert(newElement);
+        }
+    
+	else if (strcmp(choice, "2") == 0) {
+	  display(root);
+        }
+	else if (strcmp(choice, "3") == 0) {
+	  drawTree();
+        }
+	else {
+	  printf("Nie ma takiego wyboru\n");
+	}
+     } while (1);
+
     return 0;
 }
