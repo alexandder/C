@@ -1,8 +1,7 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ncurses.h>
+#include <curses.h>
 #define SIZE 30
 
 
@@ -15,12 +14,23 @@ struct node {
     struct node* parent;
 };
 
-struct node* root = NULL;
+
+struct node* NIL;
+struct node* root;
+
+void makeNIL() {
+  NIL = (struct node*)malloc(sizeof(struct node));
+  NIL->parent = root;
+  NIL->left = NIL;
+  NIL->right = NIL;
+  NIL->color = BLACK;
+  root = NIL;
+}
 
 
 struct node* treeSearch(int k) {
     struct node* x = root;
-    while(x != NULL && x->value != k) {
+    while(x != NIL && x->value != k) {
         if ( k < x->value)
             x = x->left;
         else
@@ -33,71 +43,85 @@ void LeftRotate(int k) {
     struct node* x = treeSearch(k);
     struct node* y = x->right;
     x->right = y->left;
-    if (y->left != NULL) {
+    if (y->left != NIL) {
         y->left->parent = x;
     }
-    else if (x == x->parent->left) {
-        x->parent->left = y;
+    y->parent = x->parent;
+    if (x->parent == NIL) {
+        root = y;
     }
     else {
-        x->parent->right = y;
+        if (x == x->parent->left) {
+            x->parent->left = y;
+        }
+        else {
+            x->parent->right = y;
+        }
     }
     y->left = x;
     x->parent = y;
 }
 
 void RightRotate(int k) {
-    struct node* y = treeSearch(k);
-    struct node* x = y->left;
-    y->left = x->right;
-    if (x->right != NULL) {
-        x->right->parent = y;
+    struct node* x = treeSearch(k);
+    struct node* y = x->left;
+    x->left = y->right;
+    if (y->right != NIL) {
+        y->right->parent = x;
     }
-    else if (y == y->parent->right) {
-        y->parent->right = x;
+    y->parent = x->parent;
+    if (x->parent == NIL) {
+        root = y;
     }
     else {
-        y->parent->left = x;
+        if (x == x->parent->right)
+            x->parent->right = y;
+        else
+            x->parent->left = y;
     }
-    x->right = y;
-    y->parent = x;
+    y->right = x;
+    x->parent = y;
 }
 
 void RBInsertFixup(int k) {
     struct node* z = treeSearch(k);
-    while ( z->parent->color == RED) {
-      if (z->parent == z->parent->parent->left) {
-        struct node* y = z->parent->parent->right;
-        if (y->color == RED) {
-            z->parent->color = BLACK;
-            y->color = BLACK;
-            z->parent->parent->color = RED;
-            z = z->parent->parent;
+    while (z != root && z->parent->color == RED) {
+        if (z->parent == z->parent->parent->left) {
+            struct node* y = z->parent->parent->right;
+            if (y != NIL && y->color == RED) {
+                z->parent->color = BLACK;
+                y->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            }
+            else {
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    LeftRotate(z->value);
+                }
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                RightRotate(z->parent->parent->value);
+            }
         }
-        else if (z == z->parent->right) {
-            z = z->parent;
-            LeftRotate(z->value);
+        else {
+            struct node* y = z->parent->parent->left;
+            if (y != NIL && y->color == RED) {
+                z->parent->color = BLACK;
+                y->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            }
+            else {
+                if (z == z->parent->left) {
+                    z = z->parent;
+                    RightRotate(z->value);
+                }
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                LeftRotate(z->parent->parent->value);
+            }
         }
-        z->parent->color = BLACK;
-        z->parent->parent->color = RED;
-        RightRotate(z->parent->parent->value);
-      }
-      else {
-        struct node* y = z->parent->parent->left;
-        if (y->color == RED) {
-            z->parent->color = BLACK;
-            y->color = BLACK;
-            z->parent->parent->color = RED;
-            z = z->parent->parent;
-        }
-        else if (z == z->parent->left) {
-            z = z->parent;
-            RightRotate(z->value);
-        }
-        z->parent->color = BLACK;
-        z->parent->parent->color = RED;
-        LeftRotate(z->parent->parent->value);
-      }
     }
     root->color = BLACK;
 }
@@ -105,9 +129,9 @@ void RBInsertFixup(int k) {
 
 void RBInsert(int k){
 
-    struct node* y = NULL;
+    struct node* y = NIL;
     struct node* x = root;
-    while (x != NULL){
+    while (x != NIL){
         y = x;
         if (k < x->value){
             x = x->left;
@@ -120,38 +144,36 @@ void RBInsert(int k){
             x = x->right;
         }
     }
-    printf("test\n");
     struct node* newNode = (struct node*)malloc(sizeof(struct node));
     if (newNode == NULL) {
-      printf("za malo pamieci\n");
-      return;
+        printf("za malo pamieci\n");
+        exit(1);
     }
     else {
-    newNode->parent = y;
-    newNode->value = k;
-    newNode->left = NULL;
-    newNode->right = NULL;
-    if ( y == NULL){
-        root = newNode;
-    }
-    else {
-        if (newNode->value< y->value){
-            y->left = newNode;
+        newNode->parent = y;
+        newNode->value = k;
+        newNode->left = NIL;
+        newNode->right = NIL;
+        newNode->color=RED;
+        if ( y == NIL){
+            root = newNode;
         }
         else {
-            y->right = newNode;
+            if (newNode->value< y->value){
+                y->left = newNode;
+            }
+            else {
+                y->right = newNode;
+            }
         }
-    }
-    newNode->color=RED;
-    RBInsertFixup(k);
-    printf("Element dodany\n");
+        RBInsertFixup(k);
+        printf("Element dodany\n");
     }
 }
 
 
 void display(struct node* x){
-    if (x != NULL)
-    {
+    if (x != NIL) {
         display(x->left);
         printf("%d\n", x->value);
         display(x->right);
@@ -159,119 +181,141 @@ void display(struct node* x){
 }
 
 
-
 int my_itoa(int val, char* buf)
 {
     const unsigned int radix = 10;
-
     char* p;
-    unsigned int a;        //every digit
+    unsigned int a;
     int len;
-    char* b;            //start of the digit char
+    char* b;
     char temp;
     unsigned int u;
-
     p = buf;
-
-    if (val < 0)
-    {
+    if (val < 0) {
         *p++ = '-';
         val = 0 - val;
     }
     u = (unsigned int)val;
-
     b = p;
-
-    do
-    {
+    do {
         a = u % radix;
         u /= radix;
-
         *p++ = a + '0';
-
     } while (u > 0);
 
     len = (int)(p - buf);
-
     *p-- = 0;
-
-    //swap
-    do
-    {
+    do {
         temp = *p;
         *p = *b;
         *b = temp;
         --p;
         ++b;
-
     } while (b < p);
-
     return len;
 }
 
+void drawLeftWord(int locr, int locc, struct node* left) {
+    char* valueWord = (char *)malloc(5);
+    int lenWord = my_itoa(left->value, valueWord);
+    init_pair( 1, COLOR_RED, COLOR_BLACK );
+    if (left->color == RED) {
+        attron( COLOR_PAIR( 1 ) );
+        mvprintw(locr, locc - lenWord, valueWord);
+        attroff( COLOR_PAIR( 1 ) );
+    }
+    if (left->color == BLACK) {
+        attron( COLOR_PAIR( 2 ) );
+        mvprintw(locr, locc - lenWord, valueWord);
+        attroff( COLOR_PAIR( 2 ) );
+    }
+}
 
+void drawRightWord(int locr, int locc, struct node* right) {
+    char* valueWord = (char *)malloc(5);
+    int lenWord = my_itoa(right->value, valueWord);
+    init_pair( 1, COLOR_RED, COLOR_BLACK );
+    if (right->color == RED) {
+        attron( COLOR_PAIR( 1 ) );
+        mvprintw(locr, locc, valueWord);
+        attroff( COLOR_PAIR( 1 ) );
+    }
+    if (right->color == BLACK) {
+        attron( COLOR_PAIR( 2 ) );
+        mvprintw(locr, locc, valueWord);
+        attroff( COLOR_PAIR( 2 ) );
+    }
+}
 
-void drawTree()
-{
+void drawLeftEdge(int x, int y) {
+    mvprintw(x, y, "/");
+    mvprintw(x+1, y-1, "/");
+    mvprintw(x+2, y-2, "/");
+}
+
+void drawRightEdge(int x, int y) {
+    mvprintw(x, y, "\\");
+    mvprintw(x+1, y+1, "\\");
+    mvprintw(x+2, y+2, "\\");
+}
+
+void drawTree() {
     initscr();
-
-    if ( root != NULL)
-    {
-        int i=0;
+    start_color();
+    if ( root != NIL) {
         int col;
         int row;
         getmaxyx(stdscr, row, col);
-    char* valueWord = (char *)malloc(5);
-	int lenWord = my_itoa(root->value, valueWord);
+        char* valueWord = (char *)malloc(5);
+        int lenWord = my_itoa(root->value, valueWord);
         mvprintw(0, col/2 - lenWord, valueWord);
-
-        if ( root->left != NULL)
+        if ( root->left != NIL)
         {
             row = 2; // pierwszy poziom
             struct node* l = root->left;
-            int loc = col/2 - 6;
+            int loc = col/2 - 9;
             drawLeftEdge(row, loc);
             row += 3;
-            loc = loc - 5;
+            loc = loc - 2;
             drawLeftWord(row, loc, l);
 
-            if (l->left != NULL)
+            if (l->left != NIL)
             {
                 row = 6; // drugi poziom
                 struct node* ll = l->left;
-                int loc2 = loc - 1;
+                int loc2 = loc - 3;
                 drawLeftEdge(row, loc2);
-                loc2 = loc2 - 4;
+                loc2 = loc2 - 2;
                 row += 3;
                 drawLeftWord(row, loc2, ll);
 
-                if (ll->left != NULL)
+                if (ll->left != NIL)
                 {
                         row = 10; // poziom trzeci
                         struct node* lll = ll->left;
-                        int loc3 = loc2 - 1;
+                        int loc3 = loc2 - 3;
                         drawLeftEdge(row, loc3);
-                        loc3 = loc3 - 3;
+                        loc3 = loc3 - 2;
                         row += 3;
                         drawLeftWord(row, loc3, lll);
 
-                        if (lll->left != NULL)
+                        if (lll->left != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 - 1;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 - 3;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 3;
+                            loc4 -= 1;
                             row += 2;
                             struct node* llll = lll->left;
                             drawLeftWord(row, loc4, llll);
 
                         }
 
-                        if (lll->right != NULL)
+                        if (lll->right != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 - 2;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
                             mvprintw(row + 2, loc4 + 2, "\\");
@@ -283,32 +327,31 @@ void drawTree()
                         }
                 }
 
-                if (ll->right != NULL)
+                if (ll->right != NIL)
                 {
                         row = 10; // poziom trzeci
                         struct node* llr = ll->right;
-                        int loc3 = loc2 + 1;
+                        int loc3 = loc2;
                         drawRightEdge(row, loc3);
                         loc3 += 1;
                         row += 3;
                         drawRightWord(row, loc3, llr);
 
-                        if ( llr->left != NULL)
+                        if ( llr->left != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 - 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 1;
                             row += 2;
                             struct node* llrl = llr->left;
                             drawLeftWord(row, loc4, llrl);
                         }
 
-                        if ( llr->right != NULL)
+                        if ( llr->right != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 + 1;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
                             mvprintw(row + 2, loc4 + 2, "\\");
@@ -321,81 +364,78 @@ void drawTree()
                 }
             }
 
-            if (l->right != NULL)
+            if (l->right != NIL)
             {
                 row = 6; // drugi poziom
                 struct node* lr = l->right;
-                int loc2 = loc + 2;
+                int loc2 = loc + 1;
                 drawRightEdge(row, loc2);
                 row += 3;
-                loc2 += 2;
+                loc2 += 3;
                 drawRightWord(row, loc2, lr);
 
-                if (lr->left != NULL)
+                if (lr->left != NIL)
                 {
                         struct node* lrl = lr->left; // poziom trzeci
-                        int loc3 = loc2;
-                        row = 11;
-                        mvprintw(row, loc3, "/");
-                        mvprintw(row + 1, loc3 - 1, "/");
-                        row += 2;
+                        int loc3 = loc2 + 1;
+                        row = 10;
+                        drawLeftEdge(row, loc3);
+                        row += 3;
                         loc3--;
                         drawLeftWord(row, loc3, lrl);
 
-                        if (lrl->left != NULL)
+                        if (lrl->left != NIL)
                         {
-                            row = 15; // poziom czwarty
+                            row = 14; // poziom czwarty
                             int loc4 = loc3 - 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 1;
                             row += 2;
                             struct node* lrll = lrl->left;
                             drawLeftWord(row, loc4, lrll);
                         }
 
-                        if (lrl->right != NULL)
+                        if (lrl->right != NIL)
                         {
-                            row = 15; // poziom czwarty
+                            row = 14; // poziom czwarty
                             int loc4 = loc3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
                             mvprintw(row + 2, loc4 + 2, "\\");
                             mvprintw(row + 3, loc4 + 3, "\\");
-                            loc4 += 3;
+                            loc4 += 2;
                             row += 4;
                             struct node* lrlr = lrl->right;
                             drawRightWord(row, loc4, lrlr);
                         }
                 }
 
-                if (lr->right != NULL)
+                if (lr->right != NIL)
                 {
-                        row = 11;
-                        int loc3 = loc2 + 4; // trzeci poziom
+                        row = 10;
+                        int loc3 = loc2 + 2; // trzeci poziom
                         struct node* lrr = lr->right;
-                        mvprintw(row, loc3, "\\");
-                        mvprintw(row + 1, loc3 + 1, "\\");
-                        row += 2;
-                        loc3++;
+                        drawRightEdge(row, loc3);
+                        row += 3;
+                        loc3 += 2;
                         drawLeftWord(row, loc3 + 2, lrr);
 
-                        if (lrr->left != NULL)
+                        if (lrr->left != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 + 2;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 + 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 1;
+                            loc4 += 2;
                             row += 2;
                             struct node* lrrl = lrr->left;
                             drawLeftWord(row, loc4, lrrl);
                         }
 
-                        if (lrr->right != NULL)
+                        if (lrr->right != NIL)
                         {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 + 3;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
                             mvprintw(row + 2, loc4 + 2, "\\");
@@ -409,52 +449,49 @@ void drawTree()
             }
         }
 
-        if (root->right != NULL)
-        {
+        if (root->right != NIL) {
             struct node* r = root->right; // pierwszy poziom
-            int loc = col/2 + 6;
+            int loc = col/2 + 7;
             row = 2;
             drawRightEdge(row, loc);
             loc += 3;
             row += 3;
             drawRightWord(row, loc, r);
 
-            if (r->left != NULL)
+            if (r->left != NIL)
             {
                 row = 6; // drugi poziom
                 struct node* rl = r->left;
-                int loc2 = loc;
+                int loc2 = loc + 1;
                 drawLeftEdge(row, loc2);
-                loc2 -= 3;
+                loc2 -= 1;
                 row += 3;
                 drawLeftWord(row, loc2, rl);
 
-                if (rl->left != NULL)
+                if (rl->left != NIL)
                 {
                     struct node* rll = rl->left; // poziom trzeci
-                    int loc3 = loc2 - 1;
-                    row = 11;
-                    mvprintw(row, loc3, "/");
-                    mvprintw(row + 1, loc3 - 1, "/");
-                    row += 2;
-                    loc3 -= 2;
+                    int loc3 = loc2 - 2;
+                    row = 10;
+                    drawLeftEdge(row, loc3);
+                    row += 3;
+                    loc3 -= 1;
                     drawLeftWord(row, loc3, rll);
 
-                    if (rll->left != NULL)
+                    if (rll->left != NIL)
                     {
-                        row = 15; // poziom czwarty
+                        row = 14; // poziom czwarty
                         int loc4 = loc3 - 1;
                         mvprintw(row, loc4, "/");
                         mvprintw(row + 1, loc4 - 1, "/");
-                        loc4 -= 1;
                         row += 2;
                         struct node* rlll = rll->left;
                         drawLeftWord(row, loc4, rlll);
                     }
 
-                    if (rll->right != NULL)
+                    if (rll->right != NIL)
                     {
-                        row = 15; // poziom czwarty
+                        row = 14; // poziom czwarty
                         int loc4 = loc3;
                         mvprintw(row, loc4, "\\");
                         mvprintw(row + 1, loc4 + 1, "\\");
@@ -467,34 +504,33 @@ void drawTree()
                     }
                 }
 
-                if (rl->right != NULL)
+                if (rl->right != NIL)
                 {
-                    row = 11;
-                    int loc3 = loc2 + 1; // trzeci poziom
+                    row = 10;
+                    int loc3 = loc2; // trzeci poziom
                     struct node* rlr = rl->right;
-                    mvprintw(row, loc3, "\\");
-                    mvprintw(row + 1, loc3 + 1, "\\");
-                    row += 2;
-                    loc3++;
+                    drawRightEdge(row, loc3);
+                    row += 3;
+                    loc3 = loc3 + 2;
                     drawRightWord(row, loc3, rlr);
 
-                    if (rlr->left != NULL)
+                    if (rlr->left != NIL)
                     {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 + 2;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 + 1;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 1;
+                            loc4 += 1;
                             row += 2;
                             struct node* rlrl = rlr->left;
                             drawLeftWord(row, loc4, rlrl);
 
                     }
 
-                    if (rlr->right != NULL)
+                    if (rlr->right != NIL)
                     {
-                            row = 15; // poziom czwarty
-                            int loc4 = loc3 + 3;
+                            row = 14; // poziom czwarty
+                            int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
                             mvprintw(row + 2, loc4 + 2, "\\");
@@ -503,48 +539,45 @@ void drawTree()
                             row += 4;
                             struct node* rlrr = rlr->right;
                             drawRightWord(row, loc4, rlrr);
-
                     }
                 }
             }
 
-            if (r->right != NULL)
+            if (r->right != NIL)
             {
                 row = 6; // drugi poziom
                 struct node* rr = r->right;
-                int loc2 = loc + 3;
+                int loc2 = loc + 5;
                 drawRightEdge(row, loc2);
                 row += 3;
                 loc2 += 3;
                 drawRightWord(row, loc2, rr);
 
-                if (rr->left != NULL)
+                if (rr->left != NIL)
                 {
                     struct node* rrl = rr->left; // poziom trzeci
                     int loc3 = loc2 + 3;
-                    row = 11;
-                    mvprintw(row, loc3, "/");
-                    mvprintw(row + 1, loc3 - 1, "/");
-                    row += 2;
-                    loc3 -= 2;
+                    row = 10;
+                    drawLeftEdge(row, loc3);
+                    row += 3;
                     drawLeftWord(row, loc3, rrl);
 
-                    if (rrl->left != NULL)
+                    if (rrl->left != NIL)
                     {
-                        row = 15; // poziom czwarty
-                        int loc4 = loc3 - 1;
+                        row = 14; // poziom czwarty
+                        int loc4 = loc3 - 2;
                         mvprintw(row, loc4, "/");
                         mvprintw(row + 1, loc4 - 1, "/");
-                        loc4 -= 1;
+                        loc4 += 1;
                         row += 2;
                         struct node* rrll = rrl->left;
                         drawLeftWord(row, loc4, rrll);
                     }
 
-                    if (rrl->right != NULL)
+                    if (rrl->right != NIL)
                     {
-                        row = 15; // poziom czwarty
-                        int loc4 = loc3;
+                        row = 14; // poziom czwarty
+                        int loc4 = loc3 - 1;
                         mvprintw(row, loc4, "\\");
                         mvprintw(row + 1, loc4 + 1, "\\");
                         mvprintw(row + 2, loc4 + 2, "\\");
@@ -556,33 +589,29 @@ void drawTree()
                     }
                 }
 
-                if (rr->right != NULL)
+                if (rr->right != NIL)
                 {
-                    row = 11;
+                    row = 10;
                     int loc3 = loc2 + 5; // trzeci poziom
                     struct node* rrr = rr->right;
-                    mvprintw(row, loc3, "\\");
-                    mvprintw(row + 1, loc3 + 1, "\\");
-                    row += 2;
-                    loc3++;
+                    drawRightEdge(row, loc3);
+                    row += 3;
+                    loc3 += 2;
                     drawRightWord(row, loc3, rrr);
 
-                    if (rrr->left != NULL)
-                    {
-                            row = 15; // poziom czwarty
+                    if (rrr->left != NIL) {
+                            row = 14; // poziom czwarty
                             int loc4 = loc3 + 2;
                             mvprintw(row, loc4, "/");
                             mvprintw(row + 1, loc4 - 1, "/");
-                            loc4 -= 1;
+                            loc4 += 1;
                             row += 2;
                             struct node* rrrl = rrr->left;
                             drawLeftWord(row, loc4, rrrl);
-
                     }
 
-                    if (rrr->right != NULL)
-                    {
-                            row = 15; // poziom czwarty
+                    if (rrr->right != NIL) {
+                            row = 14; // poziom czwarty
                             int loc4 = loc3 + 3;
                             mvprintw(row, loc4, "\\");
                             mvprintw(row + 1, loc4 + 1, "\\");
@@ -603,73 +632,48 @@ void drawTree()
     endwin();
 }
 
-void drawLeftWord(int locr, int locc, struct node* left)
-{
-    char* valueWord = (char *)malloc(5);
-    int lenWord = my_itoa(left->value, valueWord);
-    mvprintw(locr, locc - lenWord, valueWord);
-}
-
-void drawRightWord(int locr, int locc, struct node* right)
-{
-    char* valueWord = (char *)malloc(5);
-    int lenWord = my_itoa(right->value, valueWord);
-    mvprintw(locr, locc, valueWord);
-}
-
-void drawLeftEdge(int x, int y)
-{
-    mvprintw(x, y, "/");
-    mvprintw(x+1, y-1, "/");
-    mvprintw(x+2, y-2, "/");
-}
-
-void drawRightEdge(int x, int y)
-{
-    mvprintw(x, y, "\\");
-    mvprintw(x+1, y+1, "\\");
-    mvprintw(x+2, y+2, "\\");
-}
-
 int main() {
-  
-  RBInsert(5);
-  RBInsert(3);
-  RBInsert(10);
-     do {
-        printf("\n");
-        printf("MENU\n");
-	printf("0 - zakonczenie\n");
-	printf("1 - dopisanie\n");
-	printf("2 - wyswietlenie\n");
-	printf("3 - rysowanie\n");
-	printf("Wybierz opcje: ");
-	char choice[1];
-	scanf("%s", choice);
-	printf("\n");
 
-	if (strcmp(choice, "0") == 0) {
-	  printf("Do widzenia!\n");
-	  break;
-	}
+    makeNIL();
+    do {
+		printf("\n");
+		printf("MENU\n");
+		printf("0 - zakonczenie\n");
+		printf("1 - dopisanie\n");
+		printf("2 - wyswietlenie\n");
+		printf("3 - rysowanie\n");
+		printf("Wybierz opcje: ");
+		char choice[1];
+		scanf("%s", choice);
+		printf("\n");
 
-	else if (strcmp(choice, "1") == 0) {
-	  int newElement;
-	  printf("Podaj wartosc: ");
-	  scanf("%d", &newElement);
-	  RBInsert(newElement);
-        }
-    
-	else if (strcmp(choice, "2") == 0) {
-	  display(root);
-        }
-	else if (strcmp(choice, "3") == 0) {
-	  drawTree();
-        }
-	else {
-	  printf("Nie ma takiego wyboru\n");
-	}
-     } while (1);
+		if (strcmp(choice, "0") == 0) {
+			printf("Do widzenia!\n");
+			break;
+		}
+
+		else if (strcmp(choice, "1") == 0) {
+			int newElement;
+			printf("Podaj wartosc: ");
+			scanf("%d", &newElement);
+			RBInsert(newElement);
+		}
+
+		else if (strcmp(choice, "2") == 0) {
+			display(root);
+		}
+
+		else if (strcmp(choice, "3") == 0) {
+			drawTree();
+			char c;
+			while ((c=getchar()) != "\n");
+		}
+
+		else {
+			printf("Nie ma takiego wyboru\n");
+		}
+
+	} while (1);
 
     return 0;
 }
